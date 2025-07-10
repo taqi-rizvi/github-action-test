@@ -1,0 +1,45 @@
+name: API and Docs Change Consistency
+
+on:
+  push:
+    branches:
+      - master 
+    paths:
+      - 'services/**/api/external/**'
+      - 'api/external/**'
+  pull_request:
+    branches:
+      - master 
+    paths:
+      - 'services/**/api/external/**'
+      - 'api/external/**'
+
+jobs:
+  check_api_docs_consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Important for comparing against previous commits
+
+      - name: Get changed files in external-api
+        id: api_changes
+        uses: tj-actions/changed-files@v44 # Check for latest version if needed
+        with:
+          files: |
+            services/**/api/external/**
+
+      - name: Get changed files in external-api-docs
+        id: docs_changes
+        uses: tj-actions/changed-files@v44 # Check for latest version if needed
+        with:
+          files: |
+            api/external/**
+
+      - name: Enforce documentation update if API changed
+        if: steps.api_changes.outputs.any_changed == 'true' && steps.docs_changes.outputs.any_changed == 'false'
+        run: |
+          echo "Error: Changes were detected in external-api but no corresponding changes were found in the documentation."
+          echo "Please update the documentation to reflect API changes."
+          exit 1
